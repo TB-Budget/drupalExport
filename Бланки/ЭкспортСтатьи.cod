@@ -1,0 +1,146 @@
+﻿class "Экспорт одной статьи";
+
+Import СИС2 Classes Файл, СтроковыеФункции;
+Import XMLRPC Classes Client;
+Import Classes Функции, Константы;
+
+inclass
+
+--Константы
+Login: string = "Shenaiya";
+Password: string = "46554312";
+URL: string = "http://wiki9.tb-b.ru/xmlrpc.php";
+ПутьЭкспорта: string = "D:\Turbo94\Projects\СправочникHTML\Помощь\";
+КоличествоСтатей: integer = 1000;
+
+inobject
+
+var postID_: string;
+var ЛогическаяГруппа: String;
+var Заголовок: String;
+var ТелоСтатьи: String;
+var КлючевыеСлова: String;
+var Класс_: string;
+var Адрес: string;
+var btnGetPost: Button;
+--------------------------------------------------------------------------------
+--{ Обработчики событий бланка
+
+  func СчитатьСтатью(postID: string): object; --хранилище
+  var res: variant[];
+  var params: variant[];
+    if postID<>nil then
+      params[1] = postID;
+      params[2] = Login;
+      params[3] = Password;
+      Res       = SimpleCall(URL,'metaWeblog.getPost',params);
+      if Res<>nil then
+         Result    = Res[1];
+      fi;
+    fi;
+  end;
+
+  func ОбработатьДанные(Данные: object): logical;
+  var i: integer;
+  var ЭтоПФК: logical;
+     КлючевыеСлова = nil;
+     Заголовок = nil;
+     ТелоСтатьи = nil;
+     ЛогическаяГруппа = nil;
+     ЭтоПФК = false;
+   --
+     if Данные.title = '' or
+        Данные.description = '' or
+        Данные.mt_tags = nil then
+        Return false;
+     fi;
+     Заголовок = Данные.title;
+     ТелоСтатьи = Данные.description; -- description или content
+     for i = 1..Данные.mt_tags.Count do
+       if Данные.mt_tags.ItemsByNumber[i].vid = ТэгЛогическаяГруппа then
+          ЛогическаяГруппа = Данные.mt_tags.ItemsByNumber[i].Name;
+       elsif Данные.mt_tags.ItemsByNumber[i].vid = ТэгКласс then
+          Класс_ = УдалитьИзСтроки(Данные.mt_tags.ItemsByNumber[i].Name, "Класс ");
+          УдалитьСимволы(Класс_, " ");
+       elsif Данные.mt_tags.ItemsByNumber[i].vid = ТэгВызов then
+          Адрес = Данные.mt_tags.ItemsByNumber[i].Name;
+       elsif Данные.mt_tags.ItemsByNumber[i].vid = ТэгКлючевыеСлова then
+          if КлючевыеСлова=nil then
+             КлючевыеСлова = Данные.mt_tags.ItemsByNumber[i].Name;
+            else
+             КлючевыеСлова = КлючевыеСлова +', '+ Данные.mt_tags.ItemsByNumber[i].Name;
+          fi;
+        elsif Данные.mt_tags.ItemsByNumber[i].vid = ТэгПФК then
+          ЭтоПФК = true;
+       fi;
+     od;
+     Return ЭтоПФК;
+  end;
+
+  proc ЗаписатьФайл;
+    var Файл: TextFile;
+    var ИмяФайла: string;
+    var ПутьЭкспорта_: String;
+    if pos('/', ЛогическаяГруппа)<>0 then
+       УдалитьСимволы(ЛогическаяГруппа,'/');
+    end;
+    ПутьЭкспорта_ = ПутьЭкспорта + ЛогическаяГруппа;--[int(ЛогическаяГруппа_)];
+    if not ExistFolder(ЛогическаяГруппа) then
+       CreateFolder(ПутьЭкспорта_);
+    fi;
+    if Pos('*', Заголовок) <> 0 then
+       УдалитьСимволы(Заголовок, "*");
+       Заголовок = Заголовок + "_" + Класс_;
+    fi;
+    ИмяФайла = ВернутьПолноеИмяФайла(ПутьЭкспорта_, Заголовок + ".htm");  -- Заголовок[1]
+    Файл = TextFile.Create(ИмяФайла,fmCreate, TextFile.UTF8);
+    Файл.WriteLn("<html>");
+    Файл.WriteLn("<head>");
+    Файл.WriteLn("<title>" + Заголовок + "</title>");
+    Файл.WriteLn('<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=windows-1251">');
+    Файл.WriteLn("<!--Метатеги-->");
+    Файл.WriteLn('<META NAME="description" CONTENT="">');
+    Файл.WriteLn('<META NAME="keywords" CONTENT="' + КлючевыеСлова + '">');
+    Файл.WriteLn('<META NAME="author" CONTENT="ТБ.Бюджет">');
+    Файл.WriteLn('<link rel=stylesheet href="topic:СИС2.style.css" type="text/css">');
+    Файл.WriteLn("</head>");
+    Файл.WriteLn('<body class="std">');
+    Файл.WriteLn('<font class="mainlink">');
+    Файл.WriteLn(Адрес);
+    Файл.WriteLn("</font>");
+    Файл.WriteLn("<p>");
+    Файл.WriteLn("<H1>" + Заголовок + "</H1>");
+    Файл.WriteLn("<hr>");
+    Файл.WriteLn(ТелоСтатьи);
+    Файл.WriteLn("</body>");
+    Файл.WriteLn("</html>");
+    Файл = nil;
+  end;
+
+  proc ЭкспортОдногоБланка(postID: string);
+  var ДанныеСтатьи: variant;
+    ДанныеСтатьи = СчитатьСтатью(postID);
+    If ОбработатьДанные(ДанныеСтатьи) then
+       ЗаписатьФайл;
+    fi;
+  end;
+
+  proc ЭкспортВсегоПриНажатии(Sender :Button);
+    var I :Integer;
+    for I = 1..КоличествоСтатей do
+      ЭкспортОдногоБланка(str(I));
+    end;
+  end;
+
+  proc btnGetPostOnClick(Sender :Button);
+    ЭкспортОдногоБланка(postID_);
+  end;
+
+  proc BlankOnCreate(Context :Variant);
+    -- Вызывается при создании объекта класса
+  --  ОбновитьСписокПоля(self.Template.CellByField['ЛогическаяГруппа_'],ЛогическаяГруппа);
+  end;
+
+--}
+
+end

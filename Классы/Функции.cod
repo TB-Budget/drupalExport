@@ -1,0 +1,13 @@
+﻿class "Различные функции";
+
+inclass
+--из ТББ_Базового
+  proc ОбновитьСписокПоля(locCell:TemplateCell;locList:string[]);
+    var i  : integer;
+    locCell.List.Clear;
+    for i = 1..LengthOfArray(locList) do
+      locCell.List.Add(locList[i] as String+'|'+Str(i)); -- -1
+    end;
+  end;
+
+end
