@@ -7,8 +7,8 @@ Import Classes Функции, Константы;
 inclass
 
 --Константы
-Login: string = "Shenaiya";
-Password: string = "46554312";
+Login: string = "test";
+Password: string = "test";
 URL: string = "http://wiki9.tb-b.ru/xmlrpc.php";
 ПутьЭкспорта: string = "D:\Turbo94\Projects\СправочникHTML\Помощь\";
 КоличествоСтатей: integer = 1000;
