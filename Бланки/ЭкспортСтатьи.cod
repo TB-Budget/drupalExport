@@ -10,7 +10,7 @@ inclass
 Login: string = "test";
 Password: string = "test";
 URL: string = "http://wiki9.tb-b.ru/xmlrpc.php";
-ПутьЭкспорта: string = "D:\Turbo94\Projects\СправочникHTML\Помощь\";
+ПутьЭкспорта: string;-- = "D:\Turbo94\Projects\СправочникHTML\Помощь\";
 КоличествоСтатей: integer = 1000;
 
 inobject
@@ -81,40 +81,44 @@ var btnGetPost: Button;
     var Файл: TextFile;
     var ИмяФайла: string;
     var ПутьЭкспорта_: String;
+    var Ответ: integer;
     if pos('/', ЛогическаяГруппа)<>0 then
        УдалитьСимволы(ЛогическаяГруппа,'/');
     end;
-    ПутьЭкспорта_ = ПутьЭкспорта + ЛогическаяГруппа;--[int(ЛогическаяГруппа_)];
-    if not ExistFolder(ЛогическаяГруппа) then
-       CreateFolder(ПутьЭкспорта_);
+    Ответ = ChooseFolder(ПутьЭкспорта, "Пожалуйста, укажите путь выгрузки");
+    if Ответ = cmOk then
+      ПутьЭкспорта_ = ПутьЭкспорта + ЛогическаяГруппа;--
+      if not ExistFolder(ЛогическаяГруппа) then
+         CreateFolder(ПутьЭкспорта_);
+      fi;
+      if Pos('*', Заголовок) <> 0 then
+         УдалитьСимволы(Заголовок, "*");
+         Заголовок = Заголовок + "_" + Класс_;
+      fi;
+      ИмяФайла = ВернутьПолноеИмяФайла(ПутьЭкспорта_, Заголовок + ".htm");  -- Заголовок[1]
+      Файл = TextFile.Create(ИмяФайла,fmCreate, TextFile.UTF8);
+      Файл.WriteLn("<html>");
+      Файл.WriteLn("<head>");
+      Файл.WriteLn("<title>" + Заголовок + "</title>");
+      Файл.WriteLn('<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=Utf-8">');
+      Файл.WriteLn("<!--Метатеги-->");
+      Файл.WriteLn('<META NAME="description" CONTENT="">');
+      Файл.WriteLn('<META NAME="keywords" CONTENT="' + КлючевыеСлова + '">');
+      Файл.WriteLn('<META NAME="author" CONTENT="ТБ.Бюджет">');
+      Файл.WriteLn('<link rel=stylesheet href="topic:СИС2.style.css" type="text/css">');
+      Файл.WriteLn("</head>");
+      Файл.WriteLn('<body class="std">');
+      Файл.WriteLn('<font class="mainlink">');
+      Файл.WriteLn(Адрес);
+      Файл.WriteLn("</font>");
+      Файл.WriteLn("<p>");
+      Файл.WriteLn("<H1>" + Заголовок + "</H1>");
+      Файл.WriteLn("<hr>");
+      Файл.WriteLn(ТелоСтатьи);
+      Файл.WriteLn("</body>");
+      Файл.WriteLn("</html>");
+      Файл = nil;
     fi;
-    if Pos('*', Заголовок) <> 0 then
-       УдалитьСимволы(Заголовок, "*");
-       Заголовок = Заголовок + "_" + Класс_;
-    fi;
-    ИмяФайла = ВернутьПолноеИмяФайла(ПутьЭкспорта_, Заголовок + ".htm");  -- Заголовок[1]
-    Файл = TextFile.Create(ИмяФайла,fmCreate, TextFile.UTF8);
-    Файл.WriteLn("<html>");
-    Файл.WriteLn("<head>");
-    Файл.WriteLn("<title>" + Заголовок + "</title>");
-    Файл.WriteLn('<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=windows-1251">');
-    Файл.WriteLn("<!--Метатеги-->");
-    Файл.WriteLn('<META NAME="description" CONTENT="">');
-    Файл.WriteLn('<META NAME="keywords" CONTENT="' + КлючевыеСлова + '">');
-    Файл.WriteLn('<META NAME="author" CONTENT="ТБ.Бюджет">');
-    Файл.WriteLn('<link rel=stylesheet href="topic:СИС2.style.css" type="text/css">');
-    Файл.WriteLn("</head>");
-    Файл.WriteLn('<body class="std">');
-    Файл.WriteLn('<font class="mainlink">');
-    Файл.WriteLn(Адрес);
-    Файл.WriteLn("</font>");
-    Файл.WriteLn("<p>");
-    Файл.WriteLn("<H1>" + Заголовок + "</H1>");
-    Файл.WriteLn("<hr>");
-    Файл.WriteLn(ТелоСтатьи);
-    Файл.WriteLn("</body>");
-    Файл.WriteLn("</html>");
-    Файл = nil;
   end;
 
   proc ЭкспортОдногоБланка(postID: string);
